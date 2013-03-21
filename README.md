@@ -1,3 +1,5 @@
+This jus add a DeviceDelegatingLayoutVelocityViewResolver to Spring Mobile. Feel free to give me some feedbacks, and another idea for the name of this class :-/
+
 # Spring Mobile
 
 [Spring Mobile] is an extension to [Spring MVC] that aims to simplify the development of mobile web applications.
