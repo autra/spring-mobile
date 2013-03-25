@@ -191,27 +191,40 @@ public class DeviceDelegatingLayoutVelocityViewResolver extends AbstractDeviceDe
 
     @Override
     public View resolveViewName(String viewName, Locale locale) throws Exception {
-		String deviceViewName = getDeviceViewName(viewName);
-		VelocityLayoutView view = (VelocityLayoutView) getViewResolver().resolveViewName(deviceViewName, locale);
-		if (getEnableFallback() && view == null) {
-			view = (VelocityLayoutView) getViewResolver().resolveViewName(viewName, locale);
-		}
-        else {
-            //that's where we put the good layout.
-            RequestAttributes attrs = RequestContextHolder.getRequestAttributes();
-            Assert.isInstanceOf(ServletRequestAttributes.class, attrs);
-            HttpServletRequest request = ((ServletRequestAttributes) attrs).getRequest();
-            Device device = DeviceUtils.getCurrentDevice(request);
-            SitePreference sitePreference = SitePreferenceUtils.getCurrentSitePreference(request);
-            if (ResolverUtils.isNormal(device, sitePreference) && StringUtils.hasText(normalLayoutUrl)) {
-                view.setLayoutUrl(normalLayoutUrl);
-            } else if (ResolverUtils.isMobile(device, sitePreference) && StringUtils.hasText(mobileLayoutUrl)) {
-                view.setLayoutUrl(mobileLayoutUrl);
-            } else if (ResolverUtils.isTablet(device, sitePreference) && StringUtils.hasText(tableLayoutUrl)) {
-                view.setLayoutUrl(tableLayoutUrl);
+        String deviceViewName = viewName;
+        if(!viewName.startsWith(REDIRECT_URL_PREFIX)) {
+            deviceViewName = getDeviceViewName(viewName);
+        }
+
+        View originalView = getViewResolver().resolveViewName(deviceViewName, locale);
+
+        //we test if it is a VelocityLayoutView because it can be a Redirect resolution
+        if(originalView == null || originalView instanceof VelocityLayoutView) {
+
+            //fallback to normal view
+            if (getEnableFallback() && originalView == null) {
+                originalView = getViewResolver().resolveViewName(viewName, locale);
+            }
+            else {
+                VelocityLayoutView view = (VelocityLayoutView) originalView;
+                //that's where we put the good layout.
+                RequestAttributes attrs = RequestContextHolder.getRequestAttributes();
+                Assert.isInstanceOf(ServletRequestAttributes.class, attrs);
+                HttpServletRequest request = ((ServletRequestAttributes) attrs).getRequest();
+                Device device = DeviceUtils.getCurrentDevice(request);
+                SitePreference sitePreference = SitePreferenceUtils.getCurrentSitePreference(request);
+                if(view != null) {
+                    if (ResolverUtils.isNormal(device, sitePreference) && StringUtils.hasText(normalLayoutUrl)) {
+                        view.setLayoutUrl(normalLayoutUrl);
+                    } else if (ResolverUtils.isMobile(device, sitePreference) && StringUtils.hasText(mobileLayoutUrl)) {
+                        view.setLayoutUrl(mobileLayoutUrl);
+                    } else if (ResolverUtils.isTablet(device, sitePreference) && StringUtils.hasText(tableLayoutUrl)) {
+                        view.setLayoutUrl(tableLayoutUrl);
+                    }
+                }
             }
         }
-		return view;
-	}
+        return originalView;
+    }
 
 }
